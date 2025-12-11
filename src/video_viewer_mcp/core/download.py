@@ -155,17 +155,31 @@ def download_video(
     Returns:
         dict with job status information
     """
-    # Check if download already exists and completed
+    # Check if download already exists
     existing_job = get_job_by_url(url)
-    if existing_job and existing_job.status == JobStatus.COMPLETED:
-        # Verify the file still exists
-        if existing_job.output_path and Path(existing_job.output_path).exists():
-            return {
-                "success": True,
+    if existing_job:
+        # For COMPLETED, verify the file still exists
+        if existing_job.status == JobStatus.COMPLETED:
+            if not (existing_job.output_path and Path(existing_job.output_path).exists()):
+                # File missing, need to re-download
+                existing_job = None
+
+        if existing_job:
+            video_dir = _get_video_dir(url)
+            result = {
+                "success": existing_job.status == JobStatus.COMPLETED,
                 "job_id": existing_job.job_id,
                 "status": existing_job.status.value,
-                "progress": 100.0,
+                "progress": existing_job.progress,
             }
+            if existing_job.error:
+                result["error"] = existing_job.error
+            if video_dir.exists():
+                result["video_dir"] = str(video_dir)
+            metadata = _load_metadata(video_dir)
+            if metadata:
+                result["metadata"] = metadata
+            return result
 
     # Generate job ID (same as URL hash)
     job_id = _url_to_hash(url)
