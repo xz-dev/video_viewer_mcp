@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from .config import ensure_dirs
 from .core import (
     download_video,
+    get_danmaku,
     get_download_status,
     get_subtitles,
     get_video_path,
@@ -112,6 +113,18 @@ async def api_screenshot(
         )
     except Exception as e:
         return {"success": False, "error": f"Error capturing screenshot: {e}"}
+
+
+@router.get("/danmaku")
+async def api_danmaku(
+    url: Annotated[str, Query(description="Video URL (must be downloaded first)")],
+    start_time: Annotated[float | None, Query(description="Filter start time in seconds")] = None,
+    end_time: Annotated[float | None, Query(description="Filter end time in seconds")] = None,
+    page: Annotated[int, Query(description="Page number (1-indexed)", ge=1)] = 1,
+    page_size: Annotated[int, Query(description="Items per page", ge=1, le=1000)] = 100,
+):
+    """Get danmaku (bullet comments) for a Bilibili video with pagination."""
+    return get_danmaku(url, start_time, end_time, page, page_size)
 
 
 # Token management endpoints

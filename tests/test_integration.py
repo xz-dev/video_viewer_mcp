@@ -217,6 +217,79 @@ class TestBilibili:
         assert response.headers.get("content-type") == "image/png"
         assert len(response.content) > 100  # Should have some image data (may be small for short videos)
 
+    def test_get_danmaku_default_pagination(self, client: httpx.Client):
+        """Test getting danmaku with default pagination (page=1, page_size=100)."""
+        response = client.get(
+            "/api/danmaku",
+            params={"url": TEST_BILIBILI_URL},
+        )
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["success"] is True
+        assert "total_count" in data
+        assert "page" in data
+        assert "page_size" in data
+        assert "total_pages" in data
+        assert "entries" in data
+
+        # Default pagination
+        assert data["page"] == 1
+        assert data["page_size"] == 100
+        assert data["count"] <= 100
+        assert len(data["entries"]) == data["count"]
+
+        # Store total_count for later tests
+        TestBilibili.danmaku_total = data["total_count"]
+
+    def test_get_danmaku_page_2(self, client: httpx.Client):
+        """Test getting danmaku page 2."""
+        total = getattr(TestBilibili, "danmaku_total", 0)
+        if total <= 100:
+            pytest.skip("Not enough danmaku for page 2")
+
+        response = client.get(
+            "/api/danmaku",
+            params={"url": TEST_BILIBILI_URL, "page": 2},
+        )
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["success"] is True
+        assert data["page"] == 2
+
+    def test_get_danmaku_custom_page_size(self, client: httpx.Client):
+        """Test getting danmaku with custom page_size."""
+        response = client.get(
+            "/api/danmaku",
+            params={"url": TEST_BILIBILI_URL, "page_size": 50},
+        )
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["success"] is True
+        assert data["page_size"] == 50
+        assert data["count"] <= 50
+
+    def test_get_danmaku_with_time_filter(self, client: httpx.Client):
+        """Test getting danmaku with time range filter."""
+        response = client.get(
+            "/api/danmaku",
+            params={
+                "url": TEST_BILIBILI_URL,
+                "start_time": 0,
+                "end_time": 10,
+            },
+        )
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["success"] is True
+
+        # All entries should be within the time range
+        for entry in data["entries"]:
+            assert 0 <= entry["time"] <= 10
+
 
 class TestTokens:
     """Test token management API endpoints."""

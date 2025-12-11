@@ -5,7 +5,8 @@ MCP server for video viewing - download videos, extract subtitles, and capture s
 ## Features
 
 - **Video Download**: Download videos from YouTube, Bilibili, and other platforms supported by yt-dlp
-- **Subtitles Extraction**: Get subtitles/captions from downloaded videos
+- **Subtitles Extraction**: Get subtitles/captions from downloaded videos (including AI-generated subtitles for Bilibili)
+- **Danmaku Support**: Get bullet comments from Bilibili videos with pagination
 - **Screenshot Capture**: Capture frames at specific timestamps
 - **Authentication Support**: YouTube cookies and Bilibili tokens for members-only content
 
@@ -55,6 +56,7 @@ The server exposes both MCP and REST API interfaces on port 8000.
 - `GET /api/download/{job_id}` - Get download status
 - `GET /api/downloads` - List all downloads
 - `GET /api/subtitles?url=<video_url>` - Get subtitles
+- `GET /api/danmaku?url=<video_url>` - Get danmaku (Bilibili bullet comments)
 - `GET /api/screenshot?url=<video_url>&timestamp=<time>` - Capture screenshot
 - `GET /api/health` - Health check
 
@@ -64,17 +66,18 @@ API documentation available at `/docs`.
 
 | Tool | Description |
 |------|-------------|
-| `tool_download_video` | Download a video from URL |
-| `tool_get_download_status` | Get download job status |
-| `tool_list_downloads` | List all download jobs |
-| `tool_get_subtitles` | Get video subtitles |
-| `tool_screenshot` | Capture frame at timestamp |
-| `tool_set_youtube_token` | Set YouTube cookies |
-| `tool_get_youtube_token` | Get YouTube token status |
-| `tool_delete_youtube_token` | Delete YouTube token |
-| `tool_set_bilibili_token` | Set Bilibili SESSDATA/access_key |
-| `tool_get_bilibili_token` | Get Bilibili token status |
-| `tool_delete_bilibili_token` | Delete Bilibili token |
+| `video_viewer_download_video` | Download a video from URL |
+| `video_viewer_get_download_status` | Get download job status |
+| `video_viewer_list_downloads` | List all download jobs |
+| `video_viewer_get_subtitles` | Get video subtitles |
+| `video_viewer_get_danmaku` | Get Bilibili danmaku with pagination |
+| `video_viewer_screenshot` | Capture frame at timestamp |
+| `video_viewer_set_youtube_token` | Set YouTube cookies |
+| `video_viewer_get_youtube_token` | Get YouTube token status |
+| `video_viewer_delete_youtube_token` | Delete YouTube token |
+| `video_viewer_set_bilibili_token` | Set Bilibili SESSDATA/access_key |
+| `video_viewer_get_bilibili_token` | Get Bilibili token status |
+| `video_viewer_delete_bilibili_token` | Delete Bilibili token |
 
 ## Configuration
 

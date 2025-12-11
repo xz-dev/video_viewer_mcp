@@ -268,7 +268,7 @@ def _download_with_bbdown(
         url,
         "--work-dir", str(output_dir),
         "--file-pattern", "video",
-        "--download-danmaku", "False",
+        "--download-danmaku", "True",
     ]
 
     # Add authentication if available
@@ -300,6 +300,9 @@ def _download_with_bbdown(
         # Parse output to find downloaded file and title
         output_path = _parse_bbdown_output(result.stdout, output_dir)
         title = _parse_bbdown_title(result.stdout)
+
+        # Check for subtitles and download AI subtitles if none found
+        _download_ai_subtitles_if_needed(url, output_dir, token)
 
         if progress_callback:
             progress_callback(100, "completed")
@@ -378,3 +381,55 @@ def _parse_bbdown_title(stdout: str) -> str | None:
         return match.group(1).strip()
 
     return None
+
+
+def _download_ai_subtitles_if_needed(
+    url: str,
+    output_dir: Path,
+    token: dict,
+) -> None:
+    """
+    Check if subtitles exist and download AI subtitles if none found.
+
+    BBDown skips AI subtitles by default. If no regular subtitles are available,
+    this function runs BBDown again with --sub-only to fetch AI subtitles.
+
+    Authentication methods (if token provided):
+    - SESSDATA: Web cookie authentication (recommended, easier to obtain)
+    - access_key: APP API authentication (alternative method)
+
+    Args:
+        url: Video URL
+        output_dir: Output directory
+        token: Bilibili authentication token dict (may contain sessdata and/or access_key)
+    """
+    # Check for existing subtitle files
+    subtitle_files = list(output_dir.glob("*.srt")) + list(output_dir.glob("*.ass"))
+
+    if subtitle_files:
+        # Subtitles already exist, no need to download AI subtitles
+        return
+
+    # No subtitles found, try to download AI subtitles
+    ai_cmd = [
+        "BBDown",
+        url,
+        "--work-dir", str(output_dir),
+        "--sub-only",  # Only download subtitles
+        # Note: not passing --skip-ai means AI subtitles will be downloaded
+    ]
+
+    # Add authentication if available
+    if token.get("exists"):
+        if token.get("sessdata"):
+            ai_cmd.extend(["-c", f"SESSDATA={token['sessdata']}"])
+        if token.get("access_key"):
+            ai_cmd.extend(["--access-token", token["access_key"]])
+
+    # Run BBDown for AI subtitles (ignore errors - this is optional)
+    subprocess.run(
+        ai_cmd,
+        capture_output=True,
+        text=True,
+        cwd=str(output_dir),
+    )

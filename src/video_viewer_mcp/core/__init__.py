@@ -1,5 +1,6 @@
 """Core functionality for video-viewer-mcp."""
 
+from .danmaku import get_danmaku
 from .download import download_video, get_download_status, get_video_path, list_downloads
 from .screenshot import capture_screenshot, save_screenshot
 from .subtitles import get_subtitles
@@ -22,6 +23,7 @@ __all__ = [
     "capture_screenshot",
     "save_screenshot",
     "get_subtitles",
+    "get_danmaku",
     # Token management
     "set_youtube_token",
     "get_youtube_token",

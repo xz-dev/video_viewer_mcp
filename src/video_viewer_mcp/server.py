@@ -11,6 +11,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from .config import ensure_dirs
 from .core import (
     download_video,
+    get_danmaku,
     get_download_status,
     get_subtitles,
     get_video_path,
@@ -82,6 +83,29 @@ def tool_get_subtitles(url: str, language: str | None = None) -> dict:
         language: Preferred language code (e.g., 'en', 'zh')
     """
     return get_subtitles(url, language)
+
+
+@mcp.tool(name="video_viewer_get_danmaku")
+def tool_get_danmaku(
+    url: str,
+    start_time: float | None = None,
+    end_time: float | None = None,
+    page: int = 1,
+    page_size: int = 100,
+) -> dict:
+    """
+    Get danmaku (bullet comments) for a Bilibili video with pagination.
+
+    Video must be downloaded first. Reads danmaku XML file downloaded by BBDown.
+
+    Args:
+        url: Video URL (must be downloaded first)
+        start_time: Filter start time in seconds (optional)
+        end_time: Filter end time in seconds (optional)
+        page: Page number, 1-indexed (default 1)
+        page_size: Number of items per page (default 100)
+    """
+    return get_danmaku(url, start_time, end_time, page, page_size)
 
 
 @mcp.tool(name="video_viewer_screenshot")
