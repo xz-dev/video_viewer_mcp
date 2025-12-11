@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 import io
 import re
 from pathlib import Path
@@ -117,25 +116,6 @@ def capture_screenshot(
 
     finally:
         container.close()
-
-
-def capture_screenshot_base64(
-    video_path: str | Path,
-    timestamp: str | float,
-    width: int | None = None,
-    height: int | None = None,
-    output_format: str = "PNG",
-) -> tuple[str, str]:
-    """
-    Capture a frame and return as base64 encoded string.
-
-    Returns:
-        tuple: (base64_data, mime_type)
-    """
-    image_bytes, mime_type = capture_screenshot(
-        video_path, timestamp, width, height, output_format
-    )
-    return base64.b64encode(image_bytes).decode("ascii"), mime_type
 
 
 def save_screenshot(

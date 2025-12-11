@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp.utilities.types import Image as McpImage
 from mcp.server.transport_security import TransportSecuritySettings
 
 from .config import ensure_dirs
@@ -22,7 +23,7 @@ from .core import (
     get_bilibili_token_status,
     delete_bilibili_token,
 )
-from .core.screenshot import capture_screenshot_base64
+from .core.screenshot import capture_screenshot
 
 # Create FastMCP server instance
 # Disable DNS rebinding protection to allow any Host header (for Docker/reverse proxy)
@@ -89,11 +90,11 @@ def tool_screenshot(
     timestamp: str,
     width: int | None = 1280,
     height: int | None = None,
-) -> str | dict:
+):
     """
     Capture a frame from a video at specified timestamp.
 
-    Video must be downloaded first. Returns the image as base64.
+    Video must be downloaded first. Returns the image.
 
     Args:
         url: Video URL (must be downloaded first)
@@ -106,13 +107,12 @@ def tool_screenshot(
         return {"error": "Video not downloaded. Use download_video first."}
 
     try:
-        base64_data, mime_type = capture_screenshot_base64(
+        image_bytes, mime_type = capture_screenshot(
             video_path, timestamp, width, height
         )
-        return {
-            "data": base64_data,
-            "mime_type": mime_type,
-        }
+        # Return McpImage which FastMCP will convert to ImageContent
+        image_format = mime_type.split("/")[1]  # "image/png" -> "png"
+        return McpImage(data=image_bytes, format=image_format)
     except Exception as e:
         return {"error": f"Error capturing screenshot: {e}"}
 

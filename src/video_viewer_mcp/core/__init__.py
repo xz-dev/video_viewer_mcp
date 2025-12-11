@@ -1,7 +1,7 @@
 """Core functionality for video-viewer-mcp."""
 
 from .download import download_video, get_download_status, get_video_path, list_downloads
-from .screenshot import capture_screenshot, capture_screenshot_base64, save_screenshot
+from .screenshot import capture_screenshot, save_screenshot
 from .subtitles import get_subtitles
 from .tokens import (
     delete_bilibili_token,
@@ -20,7 +20,6 @@ __all__ = [
     "list_downloads",
     "get_video_path",
     "capture_screenshot",
-    "capture_screenshot_base64",
     "save_screenshot",
     "get_subtitles",
     # Token management

@@ -440,14 +440,11 @@ class TestMCPClient:
                 )
 
                 content = result.content[0]
-                import json
-                data = json.loads(content.text)
-
-                if "error" not in data:
-                    assert "data" in data  # base64 image data
-                    assert "mime_type" in data
-                    # Verify it's valid base64
-                    base64.b64decode(data["data"])
+                # Should return ImageContent, not TextContent
+                assert content.type == "image"
+                assert content.mimeType == "image/png"
+                # Verify it's valid base64
+                base64.b64decode(content.data)
 
 
 if __name__ == "__main__":
