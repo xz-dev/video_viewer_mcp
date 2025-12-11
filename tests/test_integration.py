@@ -342,18 +342,18 @@ class TestMCPClient:
                 tools = await session.list_tools()
                 tool_names = [t.name for t in tools.tools]
 
-                assert "tool_download_video" in tool_names
-                assert "tool_get_download_status" in tool_names
-                assert "tool_list_downloads" in tool_names
-                assert "tool_get_subtitles" in tool_names
-                assert "tool_screenshot" in tool_names
+                assert "video_viewer_download_video" in tool_names
+                assert "video_viewer_get_download_status" in tool_names
+                assert "video_viewer_list_downloads" in tool_names
+                assert "video_viewer_get_subtitles" in tool_names
+                assert "video_viewer_screenshot" in tool_names
                 # Token management tools
-                assert "tool_set_youtube_token" in tool_names
-                assert "tool_get_youtube_token" in tool_names
-                assert "tool_delete_youtube_token" in tool_names
-                assert "tool_set_bilibili_token" in tool_names
-                assert "tool_get_bilibili_token" in tool_names
-                assert "tool_delete_bilibili_token" in tool_names
+                assert "video_viewer_set_youtube_token" in tool_names
+                assert "video_viewer_get_youtube_token" in tool_names
+                assert "video_viewer_delete_youtube_token" in tool_names
+                assert "video_viewer_set_bilibili_token" in tool_names
+                assert "video_viewer_get_bilibili_token" in tool_names
+                assert "video_viewer_delete_bilibili_token" in tool_names
 
     @pytest.mark.asyncio
     async def test_mcp_download_video(self, mcp_client):
@@ -365,7 +365,7 @@ class TestMCPClient:
                 await session.initialize()
 
                 result = await session.call_tool(
-                    "tool_download_video",
+                    "video_viewer_download_video",
                     arguments={"url": TEST_VIDEO_URL},
                 )
 
@@ -391,7 +391,7 @@ class TestMCPClient:
                 await session.initialize()
 
                 result = await session.call_tool(
-                    "tool_list_downloads",
+                    "video_viewer_list_downloads",
                     arguments={},
                 )
 
@@ -411,7 +411,7 @@ class TestMCPClient:
                 await session.initialize()
 
                 result = await session.call_tool(
-                    "tool_get_subtitles",
+                    "video_viewer_get_subtitles",
                     arguments={"url": TEST_VIDEO_URL},
                 )
 
@@ -431,7 +431,7 @@ class TestMCPClient:
                 await session.initialize()
 
                 result = await session.call_tool(
-                    "tool_screenshot",
+                    "video_viewer_screenshot",
                     arguments={
                         "url": TEST_VIDEO_URL,
                         "timestamp": "5",

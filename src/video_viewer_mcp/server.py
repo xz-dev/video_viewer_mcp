@@ -33,7 +33,7 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_download_video")
 def tool_download_video(url: str, output_dir: str | None = None) -> dict:
     """
     Download a video from URL.
@@ -48,7 +48,7 @@ def tool_download_video(url: str, output_dir: str | None = None) -> dict:
     return download_video(url, output_dir)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_get_download_status")
 def tool_get_download_status(job_id: str) -> dict:
     """
     Get the status of a download job by job ID.
@@ -59,7 +59,7 @@ def tool_get_download_status(job_id: str) -> dict:
     return get_download_status(job_id)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_list_downloads")
 def tool_list_downloads(status: str | None = None) -> dict:
     """
     List all download jobs.
@@ -70,7 +70,7 @@ def tool_list_downloads(status: str | None = None) -> dict:
     return list_downloads(status)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_get_subtitles")
 def tool_get_subtitles(url: str, language: str | None = None) -> dict:
     """
     Get subtitles for a video URL.
@@ -84,7 +84,7 @@ def tool_get_subtitles(url: str, language: str | None = None) -> dict:
     return get_subtitles(url, language)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_screenshot")
 def tool_screenshot(
     url: str,
     timestamp: str,
@@ -120,7 +120,7 @@ def tool_screenshot(
 # Token management tools
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_set_youtube_token")
 def tool_set_youtube_token(cookies: list[dict[str, Any]]) -> dict:
     """
     Set YouTube cookies for authenticated downloads.
@@ -141,7 +141,7 @@ def tool_set_youtube_token(cookies: list[dict[str, Any]]) -> dict:
     return set_youtube_token(cookies)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_get_youtube_token")
 def tool_get_youtube_token() -> dict:
     """
     Get YouTube token status.
@@ -152,7 +152,7 @@ def tool_get_youtube_token() -> dict:
     return get_youtube_token_status()
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_delete_youtube_token")
 def tool_delete_youtube_token() -> dict:
     """
     Delete YouTube token.
@@ -162,7 +162,7 @@ def tool_delete_youtube_token() -> dict:
     return delete_youtube_token()
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_set_bilibili_token")
 def tool_set_bilibili_token(
     sessdata: str | None = None,
     access_key: str | None = None,
@@ -185,7 +185,7 @@ def tool_set_bilibili_token(
     return set_bilibili_token(sessdata, access_key)
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_get_bilibili_token")
 def tool_get_bilibili_token() -> dict:
     """
     Get Bilibili token status.
@@ -196,7 +196,7 @@ def tool_get_bilibili_token() -> dict:
     return get_bilibili_token_status()
 
 
-@mcp.tool()
+@mcp.tool(name="video_viewer_delete_bilibili_token")
 def tool_delete_bilibili_token() -> dict:
     """
     Delete Bilibili token.
