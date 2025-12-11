@@ -129,6 +129,11 @@ def tool_set_youtube_token(cookies: list[dict[str, Any]]) -> dict:
 
     Args:
         cookies: List of cookie dicts in browser export format.
+                 To get cookies:
+                 1. Install browser extension "Get cookies.txt LOCALLY"
+                 2. Login to youtube.com
+                 3. Export cookies as JSON (not txt)
+                 4. Pass the JSON array here
                  Each cookie should have: name, value, domain, path, etc.
                  Example: [{"name": "LOGIN_INFO", "value": "...", "domain": ".youtube.com"}]
     """
@@ -169,7 +174,11 @@ def tool_set_bilibili_token(
     At least one of sessdata or access_key must be provided.
 
     Args:
-        sessdata: SESSDATA cookie value from browser (for web authentication)
+        sessdata: SESSDATA cookie value from browser. To get it:
+                  1. Login to bilibili.com
+                  2. Open DevTools (F12) -> Application -> Cookies
+                  3. Find cookie named "SESSDATA" and copy its value
+                  Note: Only pass the value, not "SESSDATA=xxx"
         access_key: Access key from Bilibili APP (for APP API authentication)
     """
     ensure_dirs()

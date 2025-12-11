@@ -262,7 +262,7 @@ def _download_with_bbdown(
     token = _get_bilibili_token()
     if token.get("exists"):
         if token.get("sessdata"):
-            cmd.extend(["-c", token["sessdata"]])
+            cmd.extend(["-c", f"SESSDATA={token['sessdata']}"])
         if token.get("access_key"):
             cmd.extend(["--access-token", token["access_key"]])
 
