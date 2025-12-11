@@ -87,6 +87,18 @@ def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[
         lang_lower = language.lower()
         # Sort files to put language-matching ones first
         files.sort(key=lambda f: (lang_lower not in f.name.lower(), f.name))
+    else:
+        # Default priority: zh-Hans, zh, en, then others
+        priority = ["zh-hans", "zh", "en"]
+
+        def get_priority(f: Path) -> tuple[int, str]:
+            name_lower = f.name.lower()
+            for i, lang in enumerate(priority):
+                if f".{lang}." in name_lower:
+                    return (i, f.name)
+            return (len(priority), f.name)
+
+        files.sort(key=get_priority)
 
     return files
 

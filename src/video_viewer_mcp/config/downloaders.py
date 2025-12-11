@@ -177,7 +177,7 @@ def _download_with_ytdlp(
         },
         "writesubtitles": True,
         "writeautomaticsub": True,
-        "subtitleslangs": ["en", "zh-Hans", "zh", "ja", "ko"],
+        "subtitleslangs": ["all"],
         "subtitlesformat": "vtt/srt/best",
         "progress_hooks": [progress_hook],
         "quiet": True,
