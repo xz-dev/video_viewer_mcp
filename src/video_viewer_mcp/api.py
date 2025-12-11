@@ -49,8 +49,7 @@ async def health():
         "status": "healthy",
         "endpoints": {
             "api": "/api",
-            "mcp_sse": "/sse",
-            "mcp_http": "/mcp",
+            "mcp": "/mcp",
             "docs": "/docs",
         },
     }

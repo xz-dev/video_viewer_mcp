@@ -45,9 +45,8 @@ podman run -p 8000:8000 -v video-data:/data video-viewer-mcp
 
 The server exposes both MCP and REST API interfaces on port 8000.
 
-### MCP Endpoints
+### MCP Endpoint
 
-- `/sse` - SSE transport
 - `/mcp` - Streamable HTTP transport
 
 ### REST API

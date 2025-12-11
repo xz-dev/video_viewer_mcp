@@ -320,22 +320,22 @@ class TestTokens:
 
 
 class TestMCPClient:
-    """Test MCP client functionality via SSE transport."""
+    """Test MCP client functionality via streamable HTTP transport."""
 
     @pytest.fixture
     def mcp_client(self, server):
         """Create MCP client."""
         from mcp import ClientSession
-        from mcp.client.sse import sse_client
+        from mcp.client.streamable_http import streamablehttp_client
 
-        return sse_client, ClientSession
+        return streamablehttp_client, ClientSession
 
     @pytest.mark.asyncio
     async def test_mcp_list_tools(self, mcp_client):
         """Test listing available MCP tools."""
-        sse_client, ClientSession = mcp_client
+        streamablehttp_client, ClientSession = mcp_client
 
-        async with sse_client(f"{BASE_URL}/sse") as (read, write):
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
@@ -358,9 +358,9 @@ class TestMCPClient:
     @pytest.mark.asyncio
     async def test_mcp_download_video(self, mcp_client):
         """Test downloading video via MCP."""
-        sse_client, ClientSession = mcp_client
+        streamablehttp_client, ClientSession = mcp_client
 
-        async with sse_client(f"{BASE_URL}/sse") as (read, write):
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
@@ -384,9 +384,9 @@ class TestMCPClient:
     @pytest.mark.asyncio
     async def test_mcp_list_downloads(self, mcp_client):
         """Test listing downloads via MCP."""
-        sse_client, ClientSession = mcp_client
+        streamablehttp_client, ClientSession = mcp_client
 
-        async with sse_client(f"{BASE_URL}/sse") as (read, write):
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
@@ -404,9 +404,9 @@ class TestMCPClient:
     @pytest.mark.asyncio
     async def test_mcp_get_subtitles(self, mcp_client):
         """Test getting subtitles via MCP."""
-        sse_client, ClientSession = mcp_client
+        streamablehttp_client, ClientSession = mcp_client
 
-        async with sse_client(f"{BASE_URL}/sse") as (read, write):
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
@@ -424,9 +424,9 @@ class TestMCPClient:
     @pytest.mark.asyncio
     async def test_mcp_screenshot(self, mcp_client):
         """Test screenshot via MCP."""
-        sse_client, ClientSession = mcp_client
+        streamablehttp_client, ClientSession = mcp_client
 
-        async with sse_client(f"{BASE_URL}/sse") as (read, write):
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
 
