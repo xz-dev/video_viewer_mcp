@@ -153,7 +153,8 @@ def _download_with_ytdlp(
     import yt_dlp
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    output_template = str(output_dir / "%(title)s.%(ext)s")
+    # Use simple filename to avoid "File name too long" errors
+    output_template = str(output_dir / "video.%(ext)s")
 
     # Progress hook for yt-dlp
     def progress_hook(d: dict[str, Any]) -> None:
@@ -170,7 +171,10 @@ def _download_with_ytdlp(
             progress_callback(100, "processing")
 
     ydl_opts: dict[str, Any] = {
-        "outtmpl": output_template,
+        "outtmpl": {
+            "default": output_template,
+            "subtitle": str(output_dir / "video.%(ext)s"),
+        },
         "writesubtitles": True,
         "writeautomaticsub": True,
         "subtitleslangs": ["en", "zh-Hans", "zh", "ja", "ko"],
@@ -198,12 +202,21 @@ def _download_with_ytdlp(
 
             output_path = ydl.prepare_filename(info)
 
-            return {
-                "success": True,
-                "output_path": output_path,
+            # Save metadata to info.json
+            video_info = {
                 "title": info.get("title"),
                 "duration": info.get("duration"),
                 "uploader": info.get("uploader"),
+                "url": url,
+                "video_file": Path(output_path).name,
+            }
+            info_path = output_dir / "info.json"
+            info_path.write_text(json.dumps(video_info, ensure_ascii=False, indent=2))
+
+            return {
+                "success": True,
+                "output_path": output_path,
+                **video_info,
             }
 
     except yt_dlp.utils.DownloadError as e:
@@ -249,12 +262,12 @@ def _download_with_bbdown(
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build BBDown command
+    # Build BBDown command - use simple filename to avoid "File name too long" errors
     cmd = [
         "BBDown",
         url,
         "--work-dir", str(output_dir),
-        "--file-pattern", "<videoTitle>",
+        "--file-pattern", "video",
         "--download-danmaku", "False",
     ]
 
@@ -284,21 +297,26 @@ def _download_with_bbdown(
                 "error": f"BBDown failed: {result.stderr or result.stdout}",
             }
 
-        # Parse output to find downloaded file
+        # Parse output to find downloaded file and title
         output_path = _parse_bbdown_output(result.stdout, output_dir)
+        title = _parse_bbdown_title(result.stdout)
 
         if progress_callback:
             progress_callback(100, "completed")
 
-        # Extract title from output or filename
-        title = None
-        if output_path:
-            title = output_path.stem
+        # Save metadata to info.json
+        video_info = {
+            "title": title,
+            "url": url,
+            "video_file": output_path.name if output_path else None,
+        }
+        info_path = output_dir / "info.json"
+        info_path.write_text(json.dumps(video_info, ensure_ascii=False, indent=2))
 
         return {
             "success": True,
             "output_path": str(output_path) if output_path else None,
-            "title": title,
+            **video_info,
         }
 
     except Exception as e:
@@ -332,3 +350,31 @@ def _parse_bbdown_output(stdout: str, output_dir: Path) -> Path | None:
 
     # Return the most recently modified file
     return max(video_files, key=lambda f: f.stat().st_mtime)
+
+
+def _parse_bbdown_title(stdout: str) -> str | None:
+    """
+    Parse BBDown output to extract video title.
+
+    BBDown output typically contains a line like:
+    视频标题: <title>
+
+    Args:
+        stdout: BBDown stdout output
+
+    Returns:
+        Video title, or None if not found
+    """
+    import re
+
+    # Try to match "视频标题: xxx" pattern
+    match = re.search(r"视频标题[:：]\s*(.+)", stdout)
+    if match:
+        return match.group(1).strip()
+
+    # Try to match "Title: xxx" pattern (English)
+    match = re.search(r"Title[:：]\s*(.+)", stdout, re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    return None
