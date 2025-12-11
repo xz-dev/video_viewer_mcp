@@ -8,6 +8,9 @@ from typing import Any
 
 from .download import get_video_path
 
+# Default languages downloaded with video (to avoid 429 errors)
+DEFAULT_SUBTITLE_LANGS = {"zh-hans", "zh-hant", "zh", "en"}
+
 
 def get_subtitles(
     url: str,
@@ -16,7 +19,8 @@ def get_subtitles(
     """
     Get subtitles for a video URL by reading downloaded subtitle files.
 
-    yt-dlp downloads subtitles alongside the video file.
+    Default languages (zh/en) are downloaded with the video.
+    Other languages are downloaded on-demand when requested.
 
     Args:
         url: Video URL
@@ -35,6 +39,13 @@ def get_subtitles(
 
     # Find subtitle files in the same directory
     subtitle_files = _find_subtitle_files(video_path, language)
+
+    if not subtitle_files:
+        # If a specific language was requested and not found, try on-demand download
+        if language and language.lower() not in DEFAULT_SUBTITLE_LANGS:
+            if _download_subtitle_on_demand(url, video_path.parent, language):
+                # Retry finding subtitle files
+                subtitle_files = _find_subtitle_files(video_path, language)
 
     if not subtitle_files:
         # Check if there are subtitles in other languages
@@ -69,6 +80,15 @@ def get_subtitles(
             "success": False,
             "error": f"Failed to parse subtitle file: {e}",
         }
+
+
+def _download_subtitle_on_demand(url: str, output_dir: Path, language: str) -> bool:
+    """Download a subtitle language on-demand."""
+    try:
+        from ..config.downloaders import download_subtitle_on_demand
+        return download_subtitle_on_demand(url, output_dir, language)
+    except Exception:
+        return False
 
 
 def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[Path]:

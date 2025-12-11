@@ -177,7 +177,7 @@ def _download_with_ytdlp(
         },
         "writesubtitles": True,
         "writeautomaticsub": True,
-        "subtitleslangs": ["all"],
+        "subtitleslangs": ["zh-Hans", "zh-Hant", "zh", "en"],
         "subtitlesformat": "vtt/srt/best",
         "progress_hooks": [progress_hook],
         "quiet": True,
@@ -381,6 +381,61 @@ def _parse_bbdown_title(stdout: str) -> str | None:
         return match.group(1).strip()
 
     return None
+
+
+def download_subtitle_on_demand(
+    url: str,
+    output_dir: Path,
+    language: str,
+) -> bool:
+    """
+    Download a specific subtitle language on-demand.
+
+    This is called when the user requests a language that wasn't
+    downloaded initially (we only download zh/en by default).
+
+    Args:
+        url: Video URL
+        output_dir: Output directory where video is stored
+        language: Language code to download (e.g., 'ja', 'ko', 'fr')
+
+    Returns:
+        True if subtitle was downloaded successfully
+    """
+    import yt_dlp
+
+    output_template = str(output_dir / "video.%(ext)s")
+
+    ydl_opts = {
+        "outtmpl": {
+            "default": output_template,
+            "subtitle": str(output_dir / "video.%(ext)s"),
+        },
+        "writesubtitles": True,
+        "writeautomaticsub": True,
+        "subtitleslangs": [language],
+        "subtitlesformat": "vtt/srt/best",
+        "skip_download": True,  # Don't re-download video
+        "quiet": True,
+        "no_warnings": True,
+    }
+
+    # Add cookies if available
+    cookies_file: Path | None = None
+    cookies = _get_youtube_cookies()
+    if cookies:
+        cookies_file = _write_cookies_file(cookies)
+        ydl_opts["cookiefile"] = str(cookies_file)
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        return True
+    except Exception:
+        return False
+    finally:
+        if cookies_file and cookies_file.exists():
+            cookies_file.unlink()
 
 
 def _download_ai_subtitles_if_needed(
