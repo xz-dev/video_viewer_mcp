@@ -1,0 +1,33 @@
+[project]
+name = "video-viewer-mcp"
+version = "0.1.0"
+description = "MCP server for video viewing - download, subtitles, screenshots"
+readme = "README.md"
+authors = [
+    { name = "xz-dev", email = "xiangzhedev@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "mcp>=1.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+    "pydantic>=2.5.0",
+    "platformdirs>=4.0.0",
+    "av>=14.0.0",
+    "pillow>=10.0.0",
+    "yt-dlp>=2024.0.0",
+]
+
+[project.scripts]
+video-viewer-mcp = "video_viewer_mcp:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.17,<0.10.0"]
+build-backend = "uv_build"
