@@ -48,7 +48,7 @@ def get_subtitles(
                 subtitle_files = _find_subtitle_files(video_path, language)
 
     if not subtitle_files:
-        # Check if there are subtitles in other languages
+        # Check if there are subtitles in other languages (locally downloaded)
         all_subtitle_files = _find_subtitle_files(video_path, None)
         if all_subtitle_files and language:
             available_langs = _get_available_languages(all_subtitle_files)
@@ -58,6 +58,17 @@ def get_subtitles(
                          f"Available languages: {', '.join(available_langs)}",
                 "available_languages": available_langs,
             }
+
+        # No local subtitles found - query remote for available languages
+        remote_langs = _get_remote_subtitle_languages(url)
+        if remote_langs:
+            return {
+                "success": False,
+                "error": "No subtitles downloaded yet. Available languages from video: "
+                         f"{', '.join(remote_langs)}. Request a specific language to download.",
+                "available_languages": remote_langs,
+            }
+
         return {
             "success": False,
             "error": "No subtitle files found. The video may not have subtitles.",
@@ -89,6 +100,50 @@ def _download_subtitle_on_demand(url: str, output_dir: Path, language: str) -> b
         return download_subtitle_on_demand(url, output_dir, language)
     except Exception:
         return False
+
+
+def _get_remote_subtitle_languages(url: str) -> list[str]:
+    """
+    Query available subtitle languages from the video without downloading.
+
+    Returns a list of language codes available for the video.
+    """
+    try:
+        import yt_dlp
+
+        ydl_opts = {
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+        }
+
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if not info:
+                return []
+
+            languages = set()
+
+            # Manual subtitles (human-created)
+            subtitles = info.get("subtitles", {})
+            languages.update(subtitles.keys())
+
+            # Automatic subtitles (auto-generated)
+            auto_subs = info.get("automatic_captions", {})
+            languages.update(auto_subs.keys())
+
+            # Sort with common languages first
+            priority = ["zh-Hans", "zh-Hant", "zh", "en", "ja", "ko"]
+            result = []
+            for lang in priority:
+                if lang in languages:
+                    result.append(lang)
+                    languages.discard(lang)
+            result.extend(sorted(languages))
+
+            return result
+    except Exception:
+        return []
 
 
 def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[Path]:
