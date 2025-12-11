@@ -37,6 +37,16 @@ def get_subtitles(
     subtitle_files = _find_subtitle_files(video_path, language)
 
     if not subtitle_files:
+        # Check if there are subtitles in other languages
+        all_subtitle_files = _find_subtitle_files(video_path, None)
+        if all_subtitle_files and language:
+            available_langs = _get_available_languages(all_subtitle_files)
+            return {
+                "success": False,
+                "error": f"No subtitles found for language '{language}'. "
+                         f"Available languages: {', '.join(available_langs)}",
+                "available_languages": available_langs,
+            }
         return {
             "success": False,
             "error": "No subtitle files found. The video may not have subtitles.",
@@ -82,11 +92,12 @@ def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[
     # Filter out the video file itself
     files = [f for f in files if f.suffix.lower() in (".vtt", ".srt")]
 
-    # If language is specified, prioritize matching files
+    # If language is specified, filter to only matching files
     if language:
         lang_lower = language.lower()
-        # Sort files to put language-matching ones first
-        files.sort(key=lambda f: (lang_lower not in f.name.lower(), f.name))
+        # Filter files to only those containing the language code
+        matching_files = [f for f in files if f".{lang_lower}." in f.name.lower()]
+        return sorted(matching_files, key=lambda f: f.name)
     else:
         # Default priority: zh-Hans, zh, en, then others
         priority = ["zh-hans", "zh", "en"]
@@ -101,6 +112,16 @@ def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[
         files.sort(key=get_priority)
 
     return files
+
+
+def _get_available_languages(subtitle_files: list[Path]) -> list[str]:
+    """Extract available language codes from subtitle filenames."""
+    languages = []
+    for f in subtitle_files:
+        lang = _detect_language_from_filename(f)
+        if lang != "unknown" and lang not in languages:
+            languages.append(lang)
+    return languages if languages else ["unknown"]
 
 
 def _detect_language_from_filename(path: Path) -> str:
