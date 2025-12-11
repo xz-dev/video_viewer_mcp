@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from .config import ensure_dirs
 from .core import (
@@ -24,7 +25,11 @@ from .core import (
 from .core.screenshot import capture_screenshot_base64
 
 # Create FastMCP server instance
-mcp = FastMCP("video-viewer-mcp")
+# Disable DNS rebinding protection to allow any Host header (for Docker/reverse proxy)
+mcp = FastMCP(
+    "video-viewer-mcp",
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
+)
 
 
 @mcp.tool()
