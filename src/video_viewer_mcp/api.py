@@ -102,22 +102,27 @@ async def api_screenshot(
 ):
     """Capture a frame from a video at specified timestamp.
 
-    Auto-scaling: If no width is specified, videos wider than 1280px will be
-    scaled down to 1280px width (720p). Videos 1280px or narrower are returned
-    at original resolution.
+    Auto-scaling: If no dimensions specified, videos with any dimension > 1280px
+    will be scaled down so the largest dimension is 1280px. Smaller videos are
+    returned at original resolution.
     """
     video_path = get_video_path(url)
     if not video_path:
         return {"success": False, "error": "Video not downloaded. Use /api/download first."}
 
-    # Auto-scale logic: if no width specified, scale down videos > 1280px wide
-    if width is None:
+    # Auto-scale logic: if no dimensions specified, scale down videos with max dimension > 1280px
+    if width is None and height is None:
         metadata = get_video_metadata(url)
-        if metadata and metadata.get("width"):
-            video_width = metadata["width"]
-            if video_width > 1280:
-                width = 1280
-            # else: width stays None, original resolution is used
+        if metadata:
+            video_width = metadata.get("width")
+            video_height = metadata.get("height")
+            if video_width and video_height:
+                max_dimension = max(video_width, video_height)
+                if max_dimension > 1280:
+                    if video_width >= video_height:
+                        width = 1280
+                    else:
+                        height = 1280
 
     try:
         image_bytes, mime_type = capture_screenshot(video_path, timestamp, width, height)

@@ -54,9 +54,9 @@ class TestGetVideoResolution:
 class TestAutoScaling:
     """Test auto-scaling logic in screenshot functions."""
 
-    def test_auto_scale_large_video(self):
-        """Test that videos > 1280px wide get scaled to 1280 (720p)."""
-        # Mock metadata with 1080p video
+    def test_auto_scale_large_landscape_video(self):
+        """Test that landscape videos with max dimension > 1280px get width scaled to 1280."""
+        # Mock metadata with 1080p video (landscape)
         mock_metadata = {"width": 1920, "height": 1080}
 
         with patch("video_viewer_mcp.server.get_video_metadata", return_value=mock_metadata):
@@ -79,8 +79,34 @@ class TestAutoScaling:
                     call_args = mock_capture.call_args
                     assert call_args[0][2] == 1280  # width argument
 
+    def test_auto_scale_large_portrait_video(self):
+        """Test that portrait videos with max dimension > 1280px get height scaled to 1280."""
+        # Mock metadata with portrait video (9:16 aspect ratio)
+        mock_metadata = {"width": 1080, "height": 1920}
+
+        with patch("video_viewer_mcp.server.get_video_metadata", return_value=mock_metadata):
+            with patch("video_viewer_mcp.server.get_video_path", return_value=Path("/fake/video.mp4")):
+                with patch("video_viewer_mcp.server.capture_screenshot") as mock_capture:
+                    mock_capture.return_value = (b"fake_image", "image/png")
+
+                    from video_viewer_mcp.server import tool_screenshot
+
+                    # Call without dimensions - should auto-scale height
+                    result = tool_screenshot(
+                        url="https://example.com/video",
+                        timestamp="10",
+                        width=None,
+                        height=None,
+                    )
+
+                    # Verify capture_screenshot was called with height=1280
+                    mock_capture.assert_called_once()
+                    call_args = mock_capture.call_args
+                    assert call_args[0][2] is None  # width argument
+                    assert call_args[0][3] == 1280  # height argument
+
     def test_no_scale_small_video(self):
-        """Test that videos <= 1280px wide are not scaled."""
+        """Test that videos with max dimension <= 1280px are not scaled."""
         # Mock metadata with 720p video
         mock_metadata = {"width": 1280, "height": 720}
 
