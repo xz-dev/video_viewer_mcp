@@ -10,6 +10,31 @@ import av
 from PIL import Image
 
 
+def get_video_resolution(video_path: str | Path) -> tuple[int | None, int | None]:
+    """
+    Get video resolution (width, height) using PyAV.
+
+    Args:
+        video_path: Path to the video file
+
+    Returns:
+        tuple: (width, height), or (None, None) if unable to read
+    """
+    video_path = Path(video_path)
+    if not video_path.exists():
+        return None, None
+
+    try:
+        container = av.open(str(video_path))
+        try:
+            stream = container.streams.video[0]
+            return stream.width, stream.height
+        finally:
+            container.close()
+    except Exception:
+        return None, None
+
+
 def parse_timestamp(timestamp: str) -> float:
     """
     Parse timestamp string to seconds.

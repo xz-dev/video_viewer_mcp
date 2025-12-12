@@ -1,7 +1,7 @@
 """Core functionality for video-viewer-mcp."""
 
 from .danmaku import get_danmaku
-from .download import download_video, get_download_status, get_video_path, list_downloads
+from .download import download_video, get_download_status, get_video_path, get_video_metadata, list_downloads
 from .screenshot import capture_screenshot, save_screenshot
 from .subtitles import get_subtitles
 from .tokens import (
@@ -20,6 +20,7 @@ __all__ = [
     "get_download_status",
     "list_downloads",
     "get_video_path",
+    "get_video_metadata",
     "capture_screenshot",
     "save_screenshot",
     "get_subtitles",

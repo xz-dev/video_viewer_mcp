@@ -207,6 +207,8 @@ def _download_with_ytdlp(
                 "title": info.get("title"),
                 "duration": info.get("duration"),
                 "uploader": info.get("uploader"),
+                "width": info.get("width"),
+                "height": info.get("height"),
                 "url": url,
                 "video_file": Path(output_path).name,
             }
@@ -307,10 +309,18 @@ def _download_with_bbdown(
         if progress_callback:
             progress_callback(100, "completed")
 
+        # Get video resolution from downloaded file (lazy import to avoid circular import)
+        width, height = None, None
+        if output_path:
+            from video_viewer_mcp.core.screenshot import get_video_resolution
+            width, height = get_video_resolution(output_path)
+
         # Save metadata to info.json
         video_info = {
             "title": title,
             "url": url,
+            "width": width,
+            "height": height,
             "video_file": output_path.name if output_path else None,
         }
         info_path = output_dir / "info.json"

@@ -15,6 +15,7 @@ from .core import (
     get_download_status,
     get_subtitles,
     get_video_path,
+    get_video_metadata,
     list_downloads,
     # Token management
     set_youtube_token,
@@ -112,7 +113,7 @@ def tool_get_danmaku(
 def tool_screenshot(
     url: str,
     timestamp: str,
-    width: int | None = 1280,
+    width: int | None = None,
     height: int | None = None,
 ):
     """
@@ -120,15 +121,28 @@ def tool_screenshot(
 
     Video must be downloaded first. Returns the image.
 
+    Auto-scaling: If no width is specified, videos wider than 1280px will be
+    scaled down to 1280px width (720p). Videos 1280px or narrower are returned
+    at original resolution.
+
     Args:
         url: Video URL (must be downloaded first)
         timestamp: Timestamp as seconds (e.g., '123.45') or HH:MM:SS format
-        width: Resize width (optional, default 1280)
+        width: Resize width (optional, auto-scales to 1280 max if not specified)
         height: Resize height (optional)
     """
     video_path = get_video_path(url)
     if not video_path:
         return {"error": "Video not downloaded. Use download_video first."}
+
+    # Auto-scale logic: if no width specified, scale down videos > 1280px wide
+    if width is None:
+        metadata = get_video_metadata(url)
+        if metadata and metadata.get("width"):
+            video_width = metadata["width"]
+            if video_width > 1280:
+                width = 1280
+            # else: width stays None, original resolution is used
 
     try:
         image_bytes, mime_type = capture_screenshot(

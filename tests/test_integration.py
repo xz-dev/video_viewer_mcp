@@ -111,6 +111,16 @@ class TestHTTPAPI:
         assert "status" in data
         assert data["status"] == "completed"
 
+        # Verify metadata includes resolution
+        assert "metadata" in data
+        metadata = data["metadata"]
+        assert "width" in metadata
+        assert "height" in metadata
+        assert isinstance(metadata["width"], int)
+        assert isinstance(metadata["height"], int)
+        assert metadata["width"] > 0
+        assert metadata["height"] > 0
+
     def test_list_downloads_with_job(self, client: httpx.Client):
         """Test listing downloads shows our job."""
         response = client.get("/api/downloads")
@@ -200,6 +210,16 @@ class TestBilibili:
         data = response.json()
         assert "status" in data
         assert data["status"] == "completed"
+
+        # Verify metadata includes resolution
+        assert "metadata" in data
+        metadata = data["metadata"]
+        assert "width" in metadata
+        assert "height" in metadata
+        assert isinstance(metadata["width"], int)
+        assert isinstance(metadata["height"], int)
+        assert metadata["width"] > 0
+        assert metadata["height"] > 0
 
     def test_bilibili_screenshot(self, client: httpx.Client):
         """Test taking a screenshot from the Bilibili video."""

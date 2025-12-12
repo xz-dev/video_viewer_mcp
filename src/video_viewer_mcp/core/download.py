@@ -138,6 +138,22 @@ def get_video_dir_by_url(url: str) -> Path | None:
     return None
 
 
+def get_video_metadata(url: str) -> dict[str, Any] | None:
+    """
+    Get video metadata for a URL if download is completed.
+
+    Args:
+        url: The video URL
+
+    Returns:
+        Metadata dict with title, duration, width, height, etc., or None if not found
+    """
+    video_dir = get_video_dir_by_url(url)
+    if video_dir:
+        return _load_metadata(video_dir)
+    return None
+
+
 def download_video(
     url: str,
     output_dir: str | None = None,
@@ -229,6 +245,8 @@ def download_video(
                 "title": result.get("title"),
                 "duration": result.get("duration"),
                 "uploader": result.get("uploader"),
+                "width": result.get("width"),
+                "height": result.get("height"),
                 "output_path": result.get("output_path"),
             })
 
@@ -284,7 +302,7 @@ def get_download_status(job_id: str) -> dict[str, Any]:
             "error": f"Job not found: {job_id}",
         }
 
-    return {
+    result = {
         "success": job.status != JobStatus.FAILED,
         "job_id": job.job_id,
         "url": job.url,
@@ -292,6 +310,15 @@ def get_download_status(job_id: str) -> dict[str, Any]:
         "progress": job.progress,
         "error": job.error,
     }
+
+    # Include metadata if job is completed
+    if job.status == JobStatus.COMPLETED:
+        video_dir = _get_video_dir(job.url)
+        metadata = _load_metadata(video_dir)
+        if metadata:
+            result["metadata"] = metadata
+
+    return result
 
 
 def list_downloads(status: str | None = None) -> dict[str, Any]:

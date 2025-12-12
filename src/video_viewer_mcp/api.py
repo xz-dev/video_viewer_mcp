@@ -15,6 +15,7 @@ from .core import (
     get_download_status,
     get_subtitles,
     get_video_path,
+    get_video_metadata,
     list_downloads,
     # Token management
     set_youtube_token,
@@ -96,13 +97,27 @@ async def api_subtitles(
 async def api_screenshot(
     url: Annotated[str, Query(description="Video URL (must be downloaded first)")],
     timestamp: Annotated[str, Query(description="Timestamp (seconds or HH:MM:SS)")],
-    width: Annotated[int | None, Query(description="Resize width")] = 1280,
+    width: Annotated[int | None, Query(description="Resize width (auto-scales to 1280 max if not specified)")] = None,
     height: Annotated[int | None, Query(description="Resize height")] = None,
 ):
-    """Capture a frame from a video at specified timestamp."""
+    """Capture a frame from a video at specified timestamp.
+
+    Auto-scaling: If no width is specified, videos wider than 1280px will be
+    scaled down to 1280px width (720p). Videos 1280px or narrower are returned
+    at original resolution.
+    """
     video_path = get_video_path(url)
     if not video_path:
         return {"success": False, "error": "Video not downloaded. Use /api/download first."}
+
+    # Auto-scale logic: if no width specified, scale down videos > 1280px wide
+    if width is None:
+        metadata = get_video_metadata(url)
+        if metadata and metadata.get("width"):
+            video_width = metadata["width"]
+            if video_width > 1280:
+                width = 1280
+            # else: width stays None, original resolution is used
 
     try:
         image_bytes, mime_type = capture_screenshot(video_path, timestamp, width, height)
