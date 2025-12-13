@@ -178,6 +178,18 @@ class TestHTTPAPI:
         assert response.status_code == 200
         assert response.headers.get("content-type") == "image/png"
 
+    def test_get_video_info_endpoint(self, client: httpx.Client):
+        """Test GET /api/video-info endpoint."""
+        response = client.get("/api/video-info", params={"url": TEST_VIDEO_URL})
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["success"] is True
+        assert "data" in data
+        assert data["data"]["title"]
+        assert data["data"]["duration"] > 0
+        assert "cached" in data
+
 
 class TestBilibili:
     """Test Bilibili video download via BBDown."""
@@ -438,6 +450,7 @@ class TestMCPClient:
                 assert "video_viewer_download_video" in tool_names
                 assert "video_viewer_get_download_status" in tool_names
                 assert "video_viewer_list_downloads" in tool_names
+                assert "video_viewer_get_video_info" in tool_names
                 assert "video_viewer_get_subtitles" in tool_names
                 assert "video_viewer_screenshot" in tool_names
                 # Token management tools
@@ -538,6 +551,32 @@ class TestMCPClient:
                 assert content.mimeType == "image/png"
                 # Verify it's valid base64
                 base64.b64decode(content.data)
+
+    @pytest.mark.asyncio
+    async def test_mcp_get_video_info(self, mcp_client):
+        """Test video_viewer_get_video_info MCP tool."""
+        streamablehttp_client, ClientSession = mcp_client
+
+        async with streamablehttp_client(f"{BASE_URL}/mcp") as (read, write, _):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+
+                result = await session.call_tool(
+                    "video_viewer_get_video_info",
+                    arguments={"url": TEST_VIDEO_URL}
+                )
+
+                assert len(result.content) > 0
+                content = result.content[0]
+
+                import json
+                data = json.loads(content.text)
+
+                assert data["success"] is True
+                assert "data" in data
+                assert data["data"]["title"]
+                assert data["data"]["duration"] > 0
+                assert "cached" in data
 
 
 if __name__ == "__main__":

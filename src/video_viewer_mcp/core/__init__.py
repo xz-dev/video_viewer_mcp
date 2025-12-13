@@ -3,6 +3,7 @@
 from .cleanup import cleanup_expired_files
 from .danmaku import get_danmaku
 from .download import download_video, get_download_status, get_video_path, get_video_metadata, list_downloads
+from .metadata import query_video_info
 from .scheduler import CleanupScheduler
 from .screenshot import capture_screenshot, save_screenshot
 from .subtitles import get_subtitles
@@ -23,6 +24,7 @@ __all__ = [
     "list_downloads",
     "get_video_path",
     "get_video_metadata",
+    "query_video_info",
     "capture_screenshot",
     "save_screenshot",
     "get_subtitles",

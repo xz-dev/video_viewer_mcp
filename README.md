@@ -55,6 +55,7 @@ The server exposes both MCP and REST API interfaces on port 8000.
 - `POST /api/download?url=<video_url>` - Download a video
 - `GET /api/download/{job_id}` - Get download status
 - `GET /api/downloads` - List all downloads
+- `GET /api/video-info?url=<video_url>` - Query video metadata without downloading
 - `GET /api/subtitles?url=<video_url>` - Get subtitles
 - `GET /api/danmaku?url=<video_url>` - Get danmaku (Bilibili bullet comments)
 - `GET /api/screenshot?url=<video_url>&timestamp=<time>` - Capture screenshot
@@ -69,6 +70,7 @@ API documentation available at `/docs`.
 | `video_viewer_download_video` | Download a video from URL |
 | `video_viewer_get_download_status` | Get download job status |
 | `video_viewer_list_downloads` | List all download jobs |
+| `video_viewer_get_video_info` | Query video metadata without downloading |
 | `video_viewer_get_subtitles` | Get video subtitles |
 | `video_viewer_get_danmaku` | Get Bilibili danmaku with pagination |
 | `video_viewer_screenshot` | Capture frame at timestamp |

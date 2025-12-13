@@ -17,6 +17,7 @@ from .core import (
     get_video_path,
     get_video_metadata,
     list_downloads,
+    query_video_info,
     # Token management
     set_youtube_token,
     get_youtube_token_status,
@@ -82,6 +83,47 @@ async def api_list(
 ):
     """List all download jobs."""
     return list_downloads(status)
+
+
+@router.get("/video-info")
+async def api_video_info(
+    url: Annotated[
+        str,
+        Query(description="Video URL to query metadata for (YouTube, Twitter, Bilibili, etc.)")
+    ]
+) -> dict:
+    """
+    Query detailed video metadata without downloading.
+
+    Returns comprehensive metadata including title, duration, resolution,
+    uploader, formats, subtitles, and 100+ other fields from yt-dlp.
+
+    Use this endpoint to:
+    - Inspect video details before downloading
+    - Check available subtitle languages
+    - Verify video quality/resolution options
+    - Get description, statistics, etc.
+
+    If the video is already downloaded, returns cached metadata instantly.
+    Otherwise queries the remote video source using yt-dlp.
+
+    Args:
+        url: Video URL (supports YouTube, Twitter, Bilibili, Vimeo, etc.)
+
+    Returns:
+        {
+            "success": bool,
+            "cached": bool,
+            "data": {
+                "title": str,
+                "duration": int,
+                "width": int,
+                "height": int,
+                ... (100+ fields)
+            }
+        }
+    """
+    return query_video_info(url)
 
 
 @router.get("/subtitles")

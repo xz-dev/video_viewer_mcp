@@ -17,6 +17,7 @@ from .core import (
     get_video_path,
     get_video_metadata,
     list_downloads,
+    query_video_info,
     # Token management
     set_youtube_token,
     get_youtube_token_status,
@@ -34,13 +35,44 @@ mcp = FastMCP(
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
 )
 
+# =============================================================================
+# TOOL USAGE GUIDANCE FOR AI ASSISTANTS:
+#
+# To understand video content:
+#   1. get_video_info     → Metadata (title, description, duration, stats)
+#   2. download_video     → Required for subtitles (limitation)
+#   3. get_subtitles      → Full transcript/captions
+#
+# To capture screenshots:
+#   1. get_video_info     → Check video details/resolution
+#   2. download_video     → Download video file
+#   3. screenshot         → Capture frame at timestamp
+#
+# Downloads are EXPENSIVE (bandwidth, storage, time). Only download when
+# screenshots are actually needed. Metadata + subtitles are usually sufficient
+# for content understanding.
+# =============================================================================
+
 
 @mcp.tool(name="video_viewer_download_video")
 def tool_download_video(url: str, output_dir: str | None = None) -> dict:
     """
-    Download a video from URL.
+    Download a video from URL - ONLY needed for taking screenshots.
 
-    Returns download status. If already downloaded, returns existing job info.
+    IMPORTANT: Only download the video if you need to capture screenshots at
+    specific timestamps. For understanding video content, you can use:
+    - get_video_info: Get metadata (title, duration, description, etc.)
+    - get_subtitles: Get subtitles/transcripts (video must be downloaded first)
+
+    Downloads the video file to disk and also extracts subtitles/danmaku if available.
+
+    Use Cases:
+    - Need screenshots at specific timestamps -> Download required
+    - Only need to understand content -> Use get_video_info + get_subtitles instead
+    - Only checking video details -> Use get_video_info only
+
+    Returns download status. If already downloaded, returns existing job info with
+    metadata.
 
     Args:
         url: Video URL to download
@@ -75,13 +107,27 @@ def tool_list_downloads(status: str | None = None) -> dict:
 @mcp.tool(name="video_viewer_get_subtitles")
 def tool_get_subtitles(url: str, language: str | None = None) -> dict:
     """
-    Get subtitles for a video URL.
+    Get subtitles/transcripts for a video URL.
 
-    Video must be downloaded first. Reads subtitle files downloaded by yt-dlp.
+    Current limitation: Video must be downloaded first, even though subtitles
+    could technically be downloaded separately. Use this with download_video to get
+    subtitles for understanding video content.
+
+    Workflow for understanding video content WITHOUT screenshots:
+    1. get_video_info - Check title, description, available subtitle languages
+    2. download_video - Download video (also downloads subtitles)
+    3. get_subtitles - Read subtitle content
+
+    Note: Default languages (zh/en) are downloaded automatically. Other languages
+    are downloaded on-demand when requested.
 
     Args:
         url: Video URL (must be downloaded first)
-        language: Preferred language code (e.g., 'en', 'zh')
+        language: Preferred language code (e.g., 'en', 'zh', 'ja', 'ko')
+
+    Returns:
+        Dictionary with subtitle entries or available languages if requested language
+        is not found
     """
     return get_subtitles(url, language)
 
@@ -119,7 +165,15 @@ def tool_screenshot(
     """
     Capture a frame from a video at specified timestamp.
 
-    Video must be downloaded first. Returns the image.
+    This is the PRIMARY reason to download a video. If you don't need screenshots,
+    consider using get_video_info + get_subtitles to understand content instead.
+
+    Video must be downloaded first using download_video. Returns the image.
+
+    Workflow:
+    1. Use get_video_info to check video details and resolution
+    2. Download video using download_video (if screenshots are needed)
+    3. Capture screenshot at desired timestamp with this tool
 
     Auto-scaling: If no dimensions specified, videos with any dimension > 1280px
     will be scaled down so the largest dimension is 1280px. Smaller videos are
@@ -247,3 +301,39 @@ def tool_delete_bilibili_token() -> dict:
     Removes stored Bilibili authentication tokens.
     """
     return delete_bilibili_token()
+
+
+@mcp.tool(name="video_viewer_get_video_info")
+def tool_get_video_info(url: str) -> dict:
+    """
+    Query detailed video metadata without downloading - PREFERRED for understanding video content.
+
+    Use this FIRST before considering download_video. Most information needs can be
+    satisfied with metadata alone.
+
+    Returns ALL available metadata about a video including title, duration,
+    uploader, resolution, formats/qualities, available subtitles, description,
+    view count, and 100+ other fields from yt-dlp.
+
+    Use this to:
+    - Understand video content (title, description, duration)
+    - Check available subtitle/caption languages
+    - Verify video quality/resolution options
+    - Get uploader information and statistics
+    - Check if subtitles are available before downloading
+
+    Combined with get_subtitles, you can fully understand video content without
+    downloading the video file. Only download_video if screenshots are needed.
+
+    Args:
+        url: Video URL (YouTube, Twitter, Bilibili, Vimeo, etc.)
+
+    Returns:
+        Dictionary with success status, cached flag, and all video metadata including:
+        - Basic: title, description, duration, upload_date
+        - Media: width, height, resolution, formats
+        - Content: subtitles (available languages), chapters
+        - Statistics: view_count, like_count, comment_count
+        - 100+ additional fields
+    """
+    return query_video_info(url)
