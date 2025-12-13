@@ -61,3 +61,18 @@ def ensure_dirs() -> None:
     get_download_dir().mkdir(parents=True, exist_ok=True)
     get_tokens_dir().mkdir(parents=True, exist_ok=True)
     (get_data_dir() / "jobs").mkdir(parents=True, exist_ok=True)
+
+
+# Cleanup configuration
+DEFAULT_CLEANUP_CONFIG = {
+    "enabled": True,
+    "retention_days": 1,
+    "schedule": "0 2 * * *",  # 2 AM daily
+}
+
+
+def get_cleanup_config() -> dict[str, Any]:
+    """Get cleanup configuration with defaults."""
+    config = load_config()
+    cleanup = config.get("cleanup", {})
+    return {**DEFAULT_CLEANUP_CONFIG, **cleanup}

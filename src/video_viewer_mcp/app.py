@@ -8,18 +8,29 @@ from fastapi import FastAPI
 
 from .api import router as api_router
 from .config import ensure_dirs
+from .core.scheduler import CleanupScheduler
 from .server import mcp
+
+# Create global cleanup scheduler instance
+cleanup_scheduler = CleanupScheduler()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan."""
     ensure_dirs()
+
+    # Start cleanup scheduler
+    await cleanup_scheduler.start()
+
     # Initialize MCP session manager (required for streamable HTTP)
     # This triggers mcp.streamable_http_app() to create session_manager
     mcp_app = mcp.streamable_http_app()
     async with mcp.session_manager.run():
         yield
+
+    # Stop cleanup scheduler
+    await cleanup_scheduler.stop()
 
 
 # Create FastAPI app with lifespan

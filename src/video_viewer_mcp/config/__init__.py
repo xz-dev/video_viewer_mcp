@@ -2,6 +2,7 @@
 
 from .settings import (
     ensure_dirs,
+    get_cleanup_config,
     get_config_dir,
     get_config_file,
     get_data_dir,
@@ -21,6 +22,7 @@ __all__ = [
     "get_tokens_dir",
     "load_config",
     "save_config",
+    "get_cleanup_config",
     "download_video",
     "match_downloader",
 ]

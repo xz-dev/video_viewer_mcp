@@ -89,6 +89,76 @@ Configuration via environment variables:
 | `VIDEO_MCP_DATA_DIR` | Data directory for jobs | `~/.local/share/video-viewer-mcp` |
 | `VIDEO_MCP_DOWNLOAD_DIR` | Download directory | `~/Videos/video-viewer-mcp` |
 
+### Automatic Cleanup
+
+video-viewer-mcp automatically cleans up expired downloaded files to free disk space.
+
+**Default Behavior:**
+- **Retention Period**: 1 day (24 hours)
+- **Cleanup Schedule**: Daily at 2 AM
+- **What Gets Cleaned**: Completed or failed downloads older than the retention period
+
+**Configuration:**
+
+Edit `~/.config/video-viewer-mcp/config.json`:
+
+```json
+{
+  "cleanup": {
+    "enabled": true,
+    "retention_days": 1,
+    "schedule": "0 2 * * *"
+  }
+}
+```
+
+**Options:**
+
+- `enabled` (bool): Enable/disable automatic cleanup. Default: `true`
+- `retention_days` (number): Days to retain files. Default: `1`. Supports fractional values (e.g., `0.5` for 12 hours)
+- `schedule` (string): Cron expression defining cleanup time. Default: `"0 2 * * *"` (2 AM daily). Uses system timezone.
+
+**Examples:**
+
+Keep files for 7 days, clean at 3 AM:
+```json
+{
+  "cleanup": {
+    "retention_days": 7,
+    "schedule": "0 3 * * *"
+  }
+}
+```
+
+Disable cleanup:
+```json
+{
+  "cleanup": {
+    "enabled": false
+  }
+}
+```
+
+**What Gets Cleaned:**
+- ✅ Completed downloads older than retention period
+- ✅ Failed downloads older than retention period
+- ✅ Associated metadata (job files, URL index entries)
+
+**What's Protected:**
+- ❌ Files currently downloading
+- ❌ Files within retention period
+
+**File Age Calculation:**
+
+Folder age is based on the **oldest file's modification time** (typically the video download time).
+
+Example:
+- Video downloaded: 2 days ago
+- Subtitle added: 1 hour ago
+- **Folder age**: 2 days (based on oldest file)
+
+**Note:** Configuration changes require application restart to take effect.
+
 ## Requirements
 
 - Python 3.13+
