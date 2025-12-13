@@ -16,10 +16,10 @@ logger = logging.getLogger(__name__)
 
 def get_folder_age_days(folder_path: Path) -> float | None:
     """
-    Get folder age in days based on oldest file's mtime.
+    Get folder age in days based on newest file's mtime.
 
-    Uses the oldest file's modification time to determine folder age.
-    This represents the download time (when video was first downloaded).
+    Uses the newest file's modification time to determine folder age.
+    This represents the time since the most recent file was added/modified.
 
     Args:
         folder_path: Path to the folder to check
@@ -32,9 +32,9 @@ def get_folder_age_days(folder_path: Path) -> float | None:
         if not files:
             return None
 
-        # Get the oldest file's mtime (represents download time)
-        oldest_mtime = min(f.stat().st_mtime for f in files if f.is_file())
-        age_seconds = time.time() - oldest_mtime
+        # Get the newest file's mtime (represents most recent activity)
+        newest_mtime = max(f.stat().st_mtime for f in files if f.is_file())
+        age_seconds = time.time() - newest_mtime
         age_days = age_seconds / 86400.0
         return age_days
     except (OSError, ValueError) as e:
@@ -165,7 +165,7 @@ def cleanup_orphaned_metadata(deleted_job_ids: set[str]) -> dict[str, int]:
     }
 
 
-def cleanup_expired_files(retention_days: int) -> dict[str, Any]:
+def cleanup_expired_files(retention_days: float) -> dict[str, Any]:
     """
     Clean up expired download files based on retention period.
 
@@ -173,7 +173,7 @@ def cleanup_expired_files(retention_days: int) -> dict[str, Any]:
     1. Scan all folders in DOWNLOAD_DIR
     2. For each folder:
        - Check all files' mtime (modification time)
-       - Use the NEWEST file's mtime as folder age
+       - Use the NEWEST file's mtime as folder age (time since last activity)
        - Check job status (skip if downloading/started)
        - If folder age > retention_days and status is completed/failed: mark for deletion
     3. Delete marked folders (entire folder including all files)
@@ -181,7 +181,7 @@ def cleanup_expired_files(retention_days: int) -> dict[str, Any]:
     5. Clean up orphaned entries in url_index.json
 
     Args:
-        retention_days: Number of days to retain files
+        retention_days: Number of days to retain files (can be fractional, e.g., 0.167 for 4 hours)
 
     Returns:
         Dictionary with cleanup statistics:

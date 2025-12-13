@@ -66,8 +66,8 @@ def ensure_dirs() -> None:
 # Cleanup configuration
 DEFAULT_CLEANUP_CONFIG = {
     "enabled": True,
-    "retention_days": 1,
-    "schedule": "0 2 * * *",  # 2 AM daily
+    "retention_days": 4 / 24,  # 4 hours
+    "schedule": "0 */6 * * *",  # Every 6 hours
 }
 
 
