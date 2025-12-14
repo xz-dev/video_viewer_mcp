@@ -30,8 +30,8 @@ def temp_dirs():
         yield {"download_dir": Path(download_dir), "data_dir": Path(data_dir), "jobs_dir": jobs_dir}
 
 
-def test_get_folder_age_days_oldest_file():
-    """Test folder age calculation based on oldest file."""
+def test_get_folder_age_days_newest_file():
+    """Test folder age calculation based on newest file."""
     with tempfile.TemporaryDirectory() as tmpdir:
         test_folder = Path(tmpdir) / "test"
         test_folder.mkdir()
@@ -48,10 +48,11 @@ def test_get_folder_age_days_oldest_file():
         new_time = time.time() - 3600  # 1 hour ago
         os.utime(new_file, (new_time, new_time))
 
-        # Test - should return age based on oldest file
+        # Test - should return age based on newest file (1 hour ago)
         age = get_folder_age_days(test_folder)
         assert age is not None
-        assert 1.9 < age < 2.1, f"Expected age ~2 days, got {age}"
+        # 1 hour = 1/24 days ≈ 0.0417 days
+        assert 0.03 < age < 0.06, f"Expected age ~0.04 days (1 hour), got {age}"
 
 
 def test_get_folder_age_days_empty_folder():

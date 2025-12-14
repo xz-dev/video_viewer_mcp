@@ -304,36 +304,38 @@ def tool_delete_bilibili_token() -> dict:
 
 
 @mcp.tool(name="video_viewer_get_video_info")
-def tool_get_video_info(url: str) -> dict:
+def tool_get_video_info(
+    url: str,
+    extra_fields: list[str] | None = None,
+) -> dict:
     """
-    Query detailed video metadata without downloading - PREFERRED for understanding video content.
+    Query video metadata without downloading - PREFERRED for understanding video content.
 
     Use this FIRST before considering download_video. Most information needs can be
     satisfied with metadata alone.
 
-    Returns ALL available metadata about a video including title, duration,
-    uploader, resolution, formats/qualities, available subtitles, description,
-    view count, and 100+ other fields from yt-dlp.
+    Returns concise metadata by default. Use extra_fields for additional data.
+
+    Default fields: id, title, description, duration, chapters, uploader, channel,
+    upload_date, width, height, thumbnail, view_count, like_count, comment_count,
+    categories, tags
 
     Use this to:
-    - Understand video content (title, description, duration)
-    - Check available subtitle/caption languages
-    - Verify video quality/resolution options
-    - Get uploader information and statistics
-    - Check if subtitles are available before downloading
+    - Understand video content (title, description, duration, chapters)
+    - Get uploader/channel information and statistics
+    - Check video resolution
 
-    Combined with get_subtitles, you can fully understand video content without
-    downloading the video file. Only download_video if screenshots are needed.
+    For subtitles, use get_subtitles tool after downloading the video.
 
     Args:
         url: Video URL (YouTube, Twitter, Bilibili, Vimeo, etc.)
+        extra_fields: Additional fields using dot notation. Examples:
+                     - ["formats"] - all available formats
+                     - ["formats.resolution"] - resolution of each format
+                     - ["subtitles", "automatic_captions"] - subtitle languages
+                     - ["thumbnails"] - all thumbnail URLs
 
     Returns:
-        Dictionary with success status, cached flag, and all video metadata including:
-        - Basic: title, description, duration, upload_date
-        - Media: width, height, resolution, formats
-        - Content: subtitles (available languages), chapters
-        - Statistics: view_count, like_count, comment_count
-        - 100+ additional fields
+        Dictionary with success status, cached flag, and metadata
     """
-    return query_video_info(url)
+    return query_video_info(url, extra_fields)

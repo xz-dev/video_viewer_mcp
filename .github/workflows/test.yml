@@ -1,0 +1,30 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build test container
+        run: docker build -t video-viewer-mcp-test -f Containerfile .
+
+      - name: Run tests in container
+        run: |
+          docker run --rm \
+            -e VIDEO_MCP_DOWNLOAD_DIR=/data/downloads \
+            -e VIDEO_MCP_DATA_DIR=/data \
+            video-viewer-mcp-test \
+            uv run pytest -v --tb=short

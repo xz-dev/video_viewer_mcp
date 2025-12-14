@@ -76,12 +76,59 @@ def _save_job(job: DownloadJob) -> None:
         json.dump(job.model_dump(mode="json"), f, indent=2, default=str)
 
 
+def _is_json_serializable(value: Any) -> bool:
+    """Check if a value is JSON serializable."""
+    if value is None:
+        return True
+    if isinstance(value, (str, int, float, bool)):
+        return True
+    if isinstance(value, (list, tuple)):
+        return all(_is_json_serializable(item) for item in value)
+    if isinstance(value, dict):
+        return all(
+            isinstance(k, str) and _is_json_serializable(v) for k, v in value.items()
+        )
+    return False
+
+
+def _clean_for_json(obj: Any) -> Any:
+    """Recursively clean an object for JSON serialization."""
+    if obj is None:
+        return None
+    if isinstance(obj, (str, int, float, bool)):
+        return obj
+    if isinstance(obj, (list, tuple)):
+        return [_clean_for_json(item) for item in obj if _is_json_serializable(item)]
+    if isinstance(obj, dict):
+        return {
+            k: _clean_for_json(v)
+            for k, v in obj.items()
+            if isinstance(k, str) and _is_json_serializable(v)
+        }
+    # Skip non-serializable objects
+    return None
+
+
 def _save_metadata(video_dir: Path, metadata: dict[str, Any]) -> None:
-    """Save video metadata to the video directory."""
+    """Save full video metadata to the video directory.
+
+    Saves all metadata fields so extra_fields queries can access them later.
+    Filtering to default fields is done at query time, not save time.
+    """
+    # Clean metadata to ensure JSON serializable
+    cleaned = _clean_for_json(metadata)
+    if cleaned is None:
+        cleaned = {}
+
+    # Remove None values for cleaner storage
+    cleaned = {k: v for k, v in cleaned.items() if v is not None}
+
+    # Add download-specific fields
+    cleaned["downloaded_at"] = datetime.now().isoformat()
+
     metadata_file = video_dir / "metadata.json"
-    metadata["downloaded_at"] = datetime.now().isoformat()
     with open(metadata_file, "w") as f:
-        json.dump(metadata, f, indent=2, ensure_ascii=False)
+        json.dump(cleaned, f, indent=2, ensure_ascii=False)
 
 
 def _load_metadata(video_dir: Path) -> dict[str, Any] | None:
@@ -239,16 +286,8 @@ def download_video(
             job.updated_at = datetime.now()
             _save_job(job)
 
-            # Save metadata to video directory
-            _save_metadata(video_dir, {
-                "url": url,
-                "title": result.get("title"),
-                "duration": result.get("duration"),
-                "uploader": result.get("uploader"),
-                "width": result.get("width"),
-                "height": result.get("height"),
-                "output_path": result.get("output_path"),
-            })
+            # Save full metadata to video directory (filtering done at query time)
+            _save_metadata(video_dir, result)
 
             return {
                 "success": True,

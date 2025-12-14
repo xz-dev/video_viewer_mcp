@@ -91,7 +91,7 @@ class TestHTTPAPI:
         assert response.status_code == 200
 
         data = response.json()
-        assert data["success"] is True
+        assert data["success"] is True, f"Download failed: {data}"
         assert "job_id" in data
         assert data["status"] in ("completed", "downloading")
 

@@ -202,7 +202,7 @@ def _download_with_ytdlp(
 
             output_path = ydl.prepare_filename(info)
 
-            # Save metadata to info.json
+            # Save basic metadata to info.json (for quick reference)
             video_info = {
                 "title": info.get("title"),
                 "duration": info.get("duration"),
@@ -215,11 +215,20 @@ def _download_with_ytdlp(
             info_path = output_dir / "info.json"
             info_path.write_text(json.dumps(video_info, ensure_ascii=False, indent=2))
 
-            return {
+            # Return full info dict for metadata extraction
+            result = {
                 "success": True,
                 "output_path": output_path,
-                **video_info,
+                "url": url,
             }
+            # Add all JSON-serializable info fields (for _extract_default_fields)
+            for k, v in info.items():
+                if v is None:
+                    continue
+                # Skip non-serializable objects (like FFmpegMergerPP)
+                if isinstance(v, (str, int, float, bool, list, dict, type(None))):
+                    result[k] = v
+            return result
 
     except yt_dlp.utils.DownloadError as e:
         return {

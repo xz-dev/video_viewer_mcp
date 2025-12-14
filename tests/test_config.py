@@ -19,10 +19,10 @@ def test_get_cleanup_config_defaults():
         with patch("video_viewer_mcp.config.settings.load_config", return_value={}):
             config = get_cleanup_config()
 
-            # Verify defaults
+            # Verify defaults (4 hours retention, every 6 hours)
             assert config["enabled"] is True
-            assert config["retention_days"] == 1
-            assert config["schedule"] == "0 2 * * *"
+            assert config["retention_days"] == 4 / 24  # 4 hours
+            assert config["schedule"] == "0 */6 * * *"  # Every 6 hours
 
 
 def test_get_cleanup_config_custom():
@@ -51,7 +51,7 @@ def test_get_cleanup_config_partial_custom():
 
         # Defaults for others
         assert config["enabled"] is True
-        assert config["schedule"] == "0 2 * * *"
+        assert config["schedule"] == "0 */6 * * *"  # Default: every 6 hours
 
 
 def test_get_cleanup_config_fractional_retention():

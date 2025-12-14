@@ -81,6 +81,36 @@ API documentation available at `/docs`.
 | `video_viewer_get_bilibili_token` | Get Bilibili token status |
 | `video_viewer_delete_bilibili_token` | Delete Bilibili token |
 
+### video_viewer_get_video_info
+
+Query video metadata without downloading. Returns concise metadata by default (optimized for AI context understanding).
+
+**Default fields:**
+- `id`, `title`, `description`, `duration`, `chapters`
+- `uploader`, `channel`, `upload_date`
+- `width`, `height`, `thumbnail`
+- `view_count`, `like_count`, `comment_count`
+- `categories`, `tags`
+
+**Extra fields (optional):**
+
+Use `extra_fields` parameter to request additional data using dot notation:
+
+| Example | Description |
+|---------|-------------|
+| `["formats"]` | All available formats with full details |
+| `["formats.resolution"]` | Resolution of each format only |
+| `["subtitles", "automatic_captions"]` | Available subtitle languages |
+| `["thumbnails"]` | All thumbnail URLs |
+
+Example MCP call:
+```json
+{
+  "url": "https://www.youtube.com/watch?v=xxx",
+  "extra_fields": ["formats.resolution", "subtitles"]
+}
+```
+
 ## Configuration
 
 Configuration via environment variables:
