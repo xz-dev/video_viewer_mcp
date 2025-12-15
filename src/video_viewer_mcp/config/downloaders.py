@@ -15,6 +15,25 @@ from typing import Any, Callable
 from urllib.parse import urlparse
 
 
+def _get_url_platform(url: str) -> str:
+    """
+    Detect platform from URL.
+
+    Args:
+        url: Video URL
+
+    Returns:
+        Platform name: "youtube", "bilibili", or "other"
+    """
+    host = urlparse(url).netloc.lower()
+
+    if "youtube.com" in host or "youtu.be" in host:
+        return "youtube"
+    if "bilibili.com" in host or "b23.tv" in host:
+        return "bilibili"
+    return "other"
+
+
 def match_downloader(url: str) -> str:
     """
     Match URL to a downloader name.
@@ -27,17 +46,13 @@ def match_downloader(url: str) -> str:
     Returns:
         Downloader name (currently only "yt-dlp" is supported)
     """
-    host = urlparse(url).netloc.lower()
+    platform = _get_url_platform(url)
 
-    # YouTube
-    if "youtube.com" in host or "youtu.be" in host:
-        return "yt-dlp"
-
-    # Bilibili -> BBDown
-    if "bilibili.com" in host or "b23.tv" in host:
+    if platform == "bilibili":
         return "bbdown"
 
     # Twitter/X
+    host = urlparse(url).netloc.lower()
     if "twitter.com" in host or "x.com" in host:
         return "yt-dlp"
 
@@ -45,7 +60,7 @@ def match_downloader(url: str) -> str:
     if "vimeo.com" in host:
         return "yt-dlp"
 
-    # Default: yt-dlp supports many websites
+    # Default: yt-dlp supports many websites (YouTube, Vimeo, Twitter, etc.)
     return "yt-dlp"
 
 
@@ -132,6 +147,59 @@ def _write_cookies_file(cookies: list[dict[str, Any]]) -> Path:
     return Path(path)
 
 
+def _write_bilibili_cookies_file() -> Path | None:
+    """
+    Write Bilibili SESSDATA to a Netscape format cookies file for yt-dlp.
+
+    Returns:
+        Path to temporary cookies file, or None if no token available
+    """
+    token = _get_bilibili_token()
+    if not token.get("exists") or not token.get("sessdata"):
+        return None
+
+    # Create temp file
+    fd, path = tempfile.mkstemp(suffix=".txt", prefix="bilibili_cookies_")
+
+    # Bilibili uses SESSDATA cookie for authentication
+    # Netscape format: domain, flag, path, secure, expiry, name, value
+    lines = [
+        "# Netscape HTTP Cookie File",
+        f".bilibili.com\tTRUE\t/\tTRUE\t0\tSESSDATA\t{token['sessdata']}",
+    ]
+
+    import os
+    with os.fdopen(fd, "w") as f:
+        f.write("\n".join(lines))
+
+    return Path(path)
+
+
+def get_cookies_file_for_url(url: str) -> Path | None:
+    """
+    Get cookies file for a URL based on platform.
+
+    This is the main function to use for getting cookies across different platforms.
+
+    Args:
+        url: Video URL
+
+    Returns:
+        Path to temporary cookies file, or None if no cookies available.
+        Caller is responsible for cleaning up the file after use.
+    """
+    platform = _get_url_platform(url)
+
+    if platform == "youtube":
+        cookies = _get_youtube_cookies()
+        if cookies:
+            return _write_cookies_file(cookies)
+    elif platform == "bilibili":
+        return _write_bilibili_cookies_file()
+
+    return None
+
+
 def _download_with_ytdlp(
     url: str,
     output_dir: Path,
@@ -184,11 +252,9 @@ def _download_with_ytdlp(
         "no_warnings": True,
     }
 
-    # Add cookies if available
-    cookies_file: Path | None = None
-    cookies = _get_youtube_cookies()
-    if cookies:
-        cookies_file = _write_cookies_file(cookies)
+    # Add cookies if available (supports YouTube, Bilibili, etc.)
+    cookies_file = get_cookies_file_for_url(url)
+    if cookies_file:
         ydl_opts["cookiefile"] = str(cookies_file)
 
     try:
@@ -442,11 +508,9 @@ def download_subtitles_only(
         "no_warnings": True,
     }
 
-    # Add cookies if available
-    cookies_file: Path | None = None
-    cookies = _get_youtube_cookies()
-    if cookies:
-        cookies_file = _write_cookies_file(cookies)
+    # Add cookies if available (supports YouTube, Bilibili, etc.)
+    cookies_file = get_cookies_file_for_url(url)
+    if cookies_file:
         ydl_opts["cookiefile"] = str(cookies_file)
 
     try:
@@ -500,11 +564,9 @@ def download_subtitle_on_demand(
         "no_warnings": True,
     }
 
-    # Add cookies if available
-    cookies_file: Path | None = None
-    cookies = _get_youtube_cookies()
-    if cookies:
-        cookies_file = _write_cookies_file(cookies)
+    # Add cookies if available (supports YouTube, Bilibili, etc.)
+    cookies_file = get_cookies_file_for_url(url)
+    if cookies_file:
         ydl_opts["cookiefile"] = str(cookies_file)
 
     try:

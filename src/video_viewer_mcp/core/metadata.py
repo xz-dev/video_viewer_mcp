@@ -123,15 +123,21 @@ def query_video_info(
             }
 
     # Query remote metadata using yt-dlp
+    import yt_dlp
+    from ..config.downloaders import get_cookies_file_for_url
+
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+    }
+
+    # Add cookies if available (supports YouTube, Bilibili, etc.)
+    cookies_file = get_cookies_file_for_url(url)
+    if cookies_file:
+        ydl_opts["cookiefile"] = str(cookies_file)
+
     try:
-        import yt_dlp
-
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-        }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
 
@@ -165,3 +171,7 @@ def query_video_info(
             "success": False,
             "error": f"Failed to query video info: {str(e)}"
         }
+    finally:
+        # Clean up temp cookies file
+        if cookies_file and cookies_file.exists():
+            cookies_file.unlink()

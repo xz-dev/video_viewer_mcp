@@ -157,15 +157,21 @@ def _get_remote_subtitle_languages(url: str) -> list[str]:
 
     Returns a list of language codes available for the video.
     """
+    import yt_dlp
+    from ..config.downloaders import get_cookies_file_for_url
+
+    ydl_opts = {
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+    }
+
+    # Add cookies if available (supports YouTube, Bilibili, etc.)
+    cookies_file = get_cookies_file_for_url(url)
+    if cookies_file:
+        ydl_opts["cookiefile"] = str(cookies_file)
+
     try:
-        import yt_dlp
-
-        ydl_opts = {
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-        }
-
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
             if not info:
@@ -193,6 +199,10 @@ def _get_remote_subtitle_languages(url: str) -> list[str]:
             return result
     except Exception:
         return []
+    finally:
+        # Clean up temp cookies file
+        if cookies_file and cookies_file.exists():
+            cookies_file.unlink()
 
 
 def _find_subtitle_files(video_path: Path, language: str | None = None) -> list[Path]:
