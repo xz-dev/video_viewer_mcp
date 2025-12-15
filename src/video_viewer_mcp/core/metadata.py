@@ -11,7 +11,6 @@ from .download import get_video_dir_by_url, _load_metadata
 logger = logging.getLogger(__name__)
 
 # Default fields returned in metadata responses (optimized for AI context understanding)
-# Note: subtitles/automatic_captions excluded - use get_subtitles tool instead
 DEFAULT_METADATA_FIELDS = {
     # Identification
     "id",
@@ -25,6 +24,8 @@ DEFAULT_METADATA_FIELDS = {
     "view_count", "like_count", "comment_count",
     # Content classification
     "categories", "tags",
+    # Subtitle availability (helps AI decide which subtitle to request)
+    "available_subtitles",
 }
 
 
@@ -39,7 +40,16 @@ def _extract_default_fields(info: dict) -> dict:
     """
     result = {}
     for key in DEFAULT_METADATA_FIELDS:
-        if key in info and info[key] is not None:
+        if key == "available_subtitles":
+            # Extract available subtitle languages
+            subtitles = info.get("subtitles", {})
+            auto_captions = info.get("automatic_captions", {})
+            if subtitles or auto_captions:
+                result[key] = {
+                    "manual": sorted(subtitles.keys()) if subtitles else [],
+                    "auto": sorted(auto_captions.keys()) if auto_captions else [],
+                }
+        elif key in info and info[key] is not None:
             result[key] = info[key]
     return result
 
