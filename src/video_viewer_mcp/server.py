@@ -40,13 +40,15 @@ mcp = FastMCP(
 #
 # To understand video content:
 #   1. get_video_info     → Metadata (title, description, duration, stats)
-#   2. download_video     → Required for subtitles (limitation)
-#   3. get_subtitles      → Full transcript/captions
+#   2. get_subtitles      → Full transcript/captions (auto-downloads subtitles only)
 #
 # To capture screenshots:
 #   1. get_video_info     → Check video details/resolution
-#   2. download_video     → Download video file
+#   2. download_video     → Download video file (ONLY needed for screenshots)
 #   3. screenshot         → Capture frame at timestamp
+#
+# IMPORTANT: get_subtitles does NOT require download_video first!
+# Subtitles are downloaded automatically without the video file.
 #
 # Downloads are EXPENSIVE (bandwidth, storage, time). Only download when
 # screenshots are actually needed. Metadata + subtitles are usually sufficient
@@ -62,9 +64,7 @@ def tool_download_video(url: str, output_dir: str | None = None) -> dict:
     IMPORTANT: Only download the video if you need to capture screenshots at
     specific timestamps. For understanding video content, you can use:
     - get_video_info: Get metadata (title, duration, description, etc.)
-    - get_subtitles: Get subtitles/transcripts (video must be downloaded first)
-
-    Downloads the video file to disk and also extracts subtitles/danmaku if available.
+    - get_subtitles: Get subtitles/transcripts (NO video download needed!)
 
     Use Cases:
     - Need screenshots at specific timestamps -> Download required
@@ -107,22 +107,20 @@ def tool_list_downloads(status: str | None = None) -> dict:
 @mcp.tool(name="video_viewer_get_subtitles")
 def tool_get_subtitles(url: str, language: str | None = None) -> dict:
     """
-    Get subtitles/transcripts for a video URL.
+    Get subtitles/transcripts for a video URL - NO video download required!
 
-    Current limitation: Video must be downloaded first, even though subtitles
-    could technically be downloaded separately. Use this with download_video to get
-    subtitles for understanding video content.
+    This tool automatically downloads subtitles without downloading the video file.
+    Use this for understanding video content efficiently.
 
     Workflow for understanding video content WITHOUT screenshots:
-    1. get_video_info - Check title, description, available subtitle languages
-    2. download_video - Download video (also downloads subtitles)
-    3. get_subtitles - Read subtitle content
+    1. get_video_info - Check title, description, duration
+    2. get_subtitles - Get subtitle content (auto-downloads subtitles only)
 
     Note: Default languages (zh/en) are downloaded automatically. Other languages
     are downloaded on-demand when requested.
 
     Args:
-        url: Video URL (must be downloaded first)
+        url: Video URL
         language: Preferred language code (e.g., 'en', 'zh', 'ja', 'ko')
 
     Returns:
@@ -230,9 +228,14 @@ def tool_set_youtube_token(cookies: list[dict[str, Any]]) -> dict:
                  1. Install browser extension "Get cookies.txt LOCALLY"
                  2. Login to youtube.com
                  3. Export cookies as JSON (not txt)
-                 4. Pass the JSON array here
+                 4. Pass the COMPLETE JSON array here
+
+                 IMPORTANT: Pass ALL cookies from the export, not just a subset!
+                 Partial cookies (e.g., only LOGIN_INFO, SID, HSID) expire quickly.
+                 The full cookie set includes interdependent tokens that validate
+                 each other. Always use the complete export.
+
                  Each cookie should have: name, value, domain, path, etc.
-                 Example: [{"name": "LOGIN_INFO", "value": "...", "domain": ".youtube.com"}]
     """
     ensure_dirs()
     return set_youtube_token(cookies)

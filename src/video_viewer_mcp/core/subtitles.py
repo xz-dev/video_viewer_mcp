@@ -1,15 +1,28 @@
-"""Subtitle reading from downloaded video files."""
+"""Subtitle reading - supports both downloaded videos and subtitle-only downloads."""
 
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 from typing import Any
 
 from .download import get_video_path
+from ..config import get_download_dir
 
 # Default languages downloaded with video (to avoid 429 errors)
 DEFAULT_SUBTITLE_LANGS = {"zh-hans", "zh-hant", "zh", "en"}
+
+
+def _url_to_hash(url: str) -> str:
+    """Generate a hash from URL for folder naming."""
+    return hashlib.sha256(url.encode()).hexdigest()[:12]
+
+
+def _get_subtitle_dir(url: str) -> Path:
+    """Get the directory for subtitles based on URL hash."""
+    url_hash = _url_to_hash(url)
+    return get_download_dir() / url_hash
 
 
 def get_subtitles(
@@ -17,10 +30,10 @@ def get_subtitles(
     language: str | None = None,
 ) -> dict[str, Any]:
     """
-    Get subtitles for a video URL by reading downloaded subtitle files.
+    Get subtitles for a video URL.
 
-    Default languages (zh/en) are downloaded with the video.
-    Other languages are downloaded on-demand when requested.
+    Downloads subtitles automatically if not already available.
+    Does NOT require the video to be downloaded first.
 
     Args:
         url: Video URL
@@ -29,27 +42,39 @@ def get_subtitles(
     Returns:
         dict with subtitle entries
     """
-    # Get the local video path
+    # First check if video is downloaded (subtitles would be in same directory)
     video_path = get_video_path(url)
-    if not video_path:
-        return {
-            "success": False,
-            "error": "Video not downloaded. Use download_video first.",
-        }
 
-    # Find subtitle files in the same directory
-    subtitle_files = _find_subtitle_files(video_path, language)
+    if video_path:
+        # Video exists, look for subtitles in video directory
+        subtitle_dir = video_path.parent
+        search_path = video_path
+    else:
+        # No video downloaded, use subtitle-only directory
+        subtitle_dir = _get_subtitle_dir(url)
+        # Create a dummy path for _find_subtitle_files to work
+        search_path = subtitle_dir / "video.mp4"
+
+    # Try to find existing subtitle files
+    if subtitle_dir.exists():
+        subtitle_files = _find_subtitle_files(search_path, language)
+    else:
+        subtitle_files = []
+
+    # If no subtitles found, try to download them
+    if not subtitle_files:
+        # Download subtitles (without downloading video)
+        if _download_subtitles_directly(url, subtitle_dir, language):
+            subtitle_files = _find_subtitle_files(search_path, language)
+
+    # If still no subtitles and a specific language was requested, try on-demand
+    if not subtitle_files and language and language.lower() not in DEFAULT_SUBTITLE_LANGS:
+        if _download_subtitle_on_demand(url, subtitle_dir, language):
+            subtitle_files = _find_subtitle_files(search_path, language)
 
     if not subtitle_files:
-        # If a specific language was requested and not found, try on-demand download
-        if language and language.lower() not in DEFAULT_SUBTITLE_LANGS:
-            if _download_subtitle_on_demand(url, video_path.parent, language):
-                # Retry finding subtitle files
-                subtitle_files = _find_subtitle_files(video_path, language)
-
-    if not subtitle_files:
-        # Check if there are subtitles in other languages (locally downloaded)
-        all_subtitle_files = _find_subtitle_files(video_path, None)
+        # Check if there are subtitles in other languages
+        all_subtitle_files = _find_subtitle_files(search_path, None) if subtitle_dir.exists() else []
         if all_subtitle_files and language:
             available_langs = _get_available_languages(all_subtitle_files)
             return {
@@ -64,8 +89,9 @@ def get_subtitles(
         if remote_langs:
             return {
                 "success": False,
-                "error": "No subtitles downloaded yet. Available languages from video: "
-                         f"{', '.join(remote_langs)}. Request a specific language to download.",
+                "error": "No subtitles available in default languages. "
+                         f"Available languages from video: {', '.join(remote_langs)}. "
+                         "Request a specific language to download.",
                 "available_languages": remote_langs,
             }
 
@@ -91,6 +117,29 @@ def get_subtitles(
             "success": False,
             "error": f"Failed to parse subtitle file: {e}",
         }
+
+
+def _download_subtitles_directly(
+    url: str, output_dir: Path, language: str | None = None
+) -> bool:
+    """
+    Download subtitles without downloading the video.
+
+    Args:
+        url: Video URL
+        output_dir: Directory to save subtitles
+        language: Optional specific language to download
+
+    Returns:
+        True if subtitles were downloaded successfully
+    """
+    try:
+        from ..config.downloaders import download_subtitles_only
+
+        languages = [language] if language else None
+        return download_subtitles_only(url, output_dir, languages)
+    except Exception:
+        return False
 
 
 def _download_subtitle_on_demand(url: str, output_dir: Path, language: str) -> bool:

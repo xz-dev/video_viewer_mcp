@@ -402,6 +402,67 @@ def _parse_bbdown_title(stdout: str) -> str | None:
     return None
 
 
+def download_subtitles_only(
+    url: str,
+    output_dir: Path,
+    languages: list[str] | None = None,
+) -> bool:
+    """
+    Download subtitles without downloading the video.
+
+    This allows fetching subtitles independently of video download.
+
+    Args:
+        url: Video URL
+        output_dir: Output directory to save subtitles
+        languages: Language codes to download (default: zh-Hans, zh-Hant, zh, en)
+
+    Returns:
+        True if any subtitle was downloaded successfully
+    """
+    import yt_dlp
+
+    if languages is None:
+        languages = ["zh-Hans", "zh-Hant", "zh", "en"]
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_template = str(output_dir / "video.%(ext)s")
+
+    ydl_opts = {
+        "outtmpl": {
+            "default": output_template,
+            "subtitle": str(output_dir / "video.%(ext)s"),
+        },
+        "writesubtitles": True,
+        "writeautomaticsub": True,
+        "subtitleslangs": languages,
+        "subtitlesformat": "vtt/srt/best",
+        "skip_download": True,  # Don't download video
+        "quiet": True,
+        "no_warnings": True,
+    }
+
+    # Add cookies if available
+    cookies_file: Path | None = None
+    cookies = _get_youtube_cookies()
+    if cookies:
+        cookies_file = _write_cookies_file(cookies)
+        ydl_opts["cookiefile"] = str(cookies_file)
+
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+
+        # Check if any subtitle files were created
+        subtitle_files = list(output_dir.glob("*.vtt")) + list(output_dir.glob("*.srt"))
+        return len(subtitle_files) > 0
+    except Exception:
+        return False
+    finally:
+        if cookies_file and cookies_file.exists():
+            cookies_file.unlink()
+
+
 def download_subtitle_on_demand(
     url: str,
     output_dir: Path,
