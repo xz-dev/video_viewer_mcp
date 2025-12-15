@@ -59,6 +59,7 @@ def client(server):
         yield client
 
 
+@pytest.mark.network
 class TestHTTPAPI:
     """Test HTTP REST API endpoints."""
 
@@ -191,6 +192,7 @@ class TestHTTPAPI:
         assert "cached" in data
 
 
+@pytest.mark.network
 class TestBilibili:
     """Test Bilibili video download via BBDown."""
 
@@ -424,6 +426,7 @@ class TestTokens:
         assert data["exists"] is False
 
 
+@pytest.mark.network
 class TestMCPClient:
     """Test MCP client functionality via streamable HTTP transport."""
 

@@ -27,4 +27,4 @@ jobs:
             -e VIDEO_MCP_DOWNLOAD_DIR=/data/downloads \
             -e VIDEO_MCP_DATA_DIR=/data \
             video-viewer-mcp-test \
-            uv run pytest -v --tb=short
+            uv run pytest -v --tb=short -m "not network"
